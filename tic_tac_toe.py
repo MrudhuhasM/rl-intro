@@ -1,27 +1,7 @@
 
-
-def inital_state():
-    state = (
-        0,0,0,
-        0,0,0,
-        0,0,0
-    )
-    return state
-
-
-def legal_state(state):
-    """Returns a list of indices representing legal moves (empty positions)."""
-    return [i for i, val in enumerate(state) if val == 0]
-
-
-def next_state(state, action, player):
-    """Returns a new state tuple after placing player mark at the action index."""
-    new_state = list(state)
-    new_state[action] = player
-    return tuple(new_state)
-
-
-
+EMPTY = 0
+X = 1
+O = -1
 
 WIN_LINES = (
     (0, 1, 2),
@@ -33,6 +13,26 @@ WIN_LINES = (
     (0, 4, 8),
     (2, 4, 6),
 )
+
+
+def initial_state():
+    return (0,) * 9
+
+
+def legal_actions(state):
+    """Returns a list of indices representing legal moves (empty positions)."""
+    return [i for i, val in enumerate(state) if val == 0]
+
+
+def next_state(state, action, player):
+    """Returns a new state tuple after placing player mark at the action index."""
+
+    assert state[action] == EMPTY
+    assert action in legal_actions(state)
+
+    new_state = list(state)
+    new_state[action] = player
+    return tuple(new_state)
 
 
 def winner(state):
@@ -51,6 +51,18 @@ def winner(state):
     return None
 
 
+def get_value(state, values):
+    res = winner(state)
+    if res == 1:
+        return 1.0
+    elif res == -1 or res == 0:
+        return 0.0
+
+    if state not in values:
+        values[state] = 0.5
+    return values[state]
+
+
 def render(state):
     """Renders the 3x3 Tic-Tac-Toe board to stdout."""
     symbols = {1: 'X', -1: 'O', 0: ' '}
@@ -63,18 +75,52 @@ def render(state):
 
 
 def main():
-    EMPTY = 0
-    X = 1
-    O = -1
+    state = initial_state()
+    assert legal_actions(state) == list(range(9))
 
-    state = (
+    s1 = next_state(state, 4, X)
+    assert state[4] == EMPTY
+    assert s1[4] == X
+
+    x_win = (
         1, 0, -1,
         0, 1, 0,
-        0, 0, -1,
+        0, 0, 1,
     )
+
+    o_win = (
+        -1, -1, -1,
+        0, 1, 0,
+        0, 0, 1,
+    )
+
+    draw = (
+        1, -1, 1,
+        1, -1, -1,
+        -1, 1, 1
+    )
+
+    assert winner(x_win) == X
+    assert winner(draw) == 0
+
+    values = {}
+    # Nonterminal unseen
+    assert get_value(state, values) == 0.5
+    assert state in values
+    # Nonterminal seen (modified value)
+    values[state] = 0.8
+    assert get_value(state, values) == 0.8
+    # Terminal X win
+    assert get_value(x_win, values) == 1.0
+    # Terminal O win
+    assert get_value(o_win, values) == 0.0
+    # Terminal draw
+    assert get_value(draw, values) == 0.0
+
     render(state)
     print("Winner:", winner(state))
 
 
+
 if __name__ == "__main__":
-    main()
+    main()
